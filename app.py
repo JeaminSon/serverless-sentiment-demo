@@ -35,8 +35,9 @@ def predict(inp: PredictIn, request: Request):
     now = t0
     ip = _get_client_ip(request)
     _rate_limit_check(ip, now)
-    
-    text = (inp.text or "").strip()
+
+     
+    text = (inp.text or "").strip() [:1000] 
     if not text:
        raise HTTPException(status_code=400, detail="text is required")
     cold = COLD_START
