@@ -26,7 +26,7 @@ jobs:
     - name: Build, tag, and push image to Amazon ECR
       env:
         ECR_REGISTRY: sentiment-lambda
-        [cite_start]ECR_REPOSITORY: aws-serverless-sentiment-analysis-demo # 사용자님의 ECR 레포지토리 이름 [cite: 1]
+        [cite_start]ECR_REPOSITORY: sentiment-api # 사용자님의 ECR 레포지토리 이름 [cite: 1]
         IMAGE_TAG: latest
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
