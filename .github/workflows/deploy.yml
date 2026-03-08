@@ -36,4 +36,4 @@ jobs:
       run: |
         aws lambda update-function-code \
           --function-name sentiment-api \
-          --image-uri ${{ steps.login-ecr.outputs.registry }}/aws-serverless-sentiment-analysis-demo:latest
+          --image-uri ${{ steps.login-ecr.outputs.registry }}/sentiment-api:latest
