@@ -19,7 +19,7 @@ app = FastAPI(title="Korean Sentiment API")
 # 컨테이너 시작 시 1회 로딩 (콜드스타트에만 영향)
 tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
 model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
-model.eval()
+model.eval() 
 
 class PredictIn(BaseModel):
     text: str
