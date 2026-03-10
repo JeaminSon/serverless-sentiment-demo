@@ -46,7 +46,16 @@ jobs:
       run: |
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
+     
+    - name: Build and push
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.login-ecr.outputs.registry }}/sentiment-lambda:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
     - name: Update Lambda function
       run: |
         aws lambda update-function-code \

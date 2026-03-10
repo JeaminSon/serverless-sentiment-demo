@@ -103,3 +103,11 @@ Collapsible dashboard UI
 ### Troubleshooting Experience
 - Resolved AWS IAM Permissions Boundary issues related to S3/Lambda access.
 - Managed S3 Bucket Region mismatch (ap-northeast-2 vs us-east-1) during Backend migration.
+
+### 🔔 Real-time Monitoring & Notifications
+- **Tool**: Discord Webhook Integration
+- **Feature**: Automated deployment status reports.
+- **Details**: 
+  - Sends real-time notifications to Discord upon GitHub Actions workflow completion (Success/Failure).
+  - Includes deployment metadata: Commits, Author, Workflow status, and direct links to Action logs.
+  - Enables rapid feedback loops for the development team.
