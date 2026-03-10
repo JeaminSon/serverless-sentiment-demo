@@ -12,7 +12,7 @@ LABEL_MAP = {"0": "NEGATIVE", "1": "POSITIVE"}
 RATE_LIMIT_WINDOW_SEC = 60
 RATE_LIMIT_MAX_REQUESTS = 20
 
-_RATE_BUCKET = {}
+_RATE_BUCKET = {} 
 
 app = FastAPI(title="Korean Sentiment API")
 
