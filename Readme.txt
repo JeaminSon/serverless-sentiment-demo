@@ -85,3 +85,21 @@ Client-side performance dashboard
 Optional recent history (privacy-aware)
 Collapsible dashboard UI
 
+### IaC (Infrastructure as Code)
+- **Tool**: Terraform
+- **State Management**: Remote Backend using AWS S3 (`sentiment-demo-jambread-2026`)
+- **Managed Resources**: 
+  - AWS Lambda (Configuration & Memory Management)
+  - AWS ECR (Container Registry Data)
+
+### CI/CD Pipeline
+- **Tool**: GitHub Actions
+- **Workflow**:
+  1. **Infrastructure Update**: Automatically applies Terraform changes on push.
+  2. **Containerization**: Builds Docker image and pushes to Amazon ECR.
+  3. **Deployment**: Updates Lambda function code and configuration (Memory: 1024MB/2048MB).
+- **Build Performance**: Average deployment time ~5m 40s.
+
+### Troubleshooting Experience
+- Resolved AWS IAM Permissions Boundary issues related to S3/Lambda access.
+- Managed S3 Bucket Region mismatch (ap-northeast-2 vs us-east-1) during Backend migration.

@@ -52,3 +52,17 @@ jobs:
         aws lambda update-function-code \
           --function-name sentiment-api \
           --image-uri ${{ steps.login-ecr.outputs.registry }}/sentiment-lambda:latest
+
+    - name: Send Discord Notification
+      if: always() 
+      uses: sarisia/actions-status-discord@v1
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        status: ${{ job.status }}
+        title: "🚀 배포 결과 리포트"
+        description: |
+          **프로젝트**: serverless-sentiment-demo
+          **결과**: ${{ job.status }}
+          **작업자**: ${{ github.actor }}
+          **커밋 메시지**: ${{ github.event.head_commit.message }}
+        color: 0x00ff00       
