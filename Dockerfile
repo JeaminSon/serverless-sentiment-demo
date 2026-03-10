@@ -6,7 +6,7 @@ RUN pip install -r requirements.txt
 
 # 모델 다운로드 (빌드 시점에 실행)
 COPY download_model.py .
-python download_model.py
+RUN python download_model.py
 
 COPY app.py .
 
