@@ -8,6 +8,8 @@ RUN pip install -r requirements.txt
 COPY download_model.py .
 RUN python download_model.py
 
+COPY model/ ./model/
+
 COPY app.py .
 
 # Lambda가 찾는 핸들러 지정
