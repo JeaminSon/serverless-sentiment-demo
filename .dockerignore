@@ -2,5 +2,11 @@
 .github
 .terraform
 model/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv
+venv
 *.tfstate*
-.terraform.lock.hcl
