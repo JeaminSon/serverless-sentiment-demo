@@ -57,7 +57,8 @@ jobs:
         push: true
         tags: ${{ steps.login-ecr.outputs.registry }}/sentiment-lambda:latest
         cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-to: type=gha,mode=min
+        provenance: false
     
     - name: Update Lambda function
       run: |
