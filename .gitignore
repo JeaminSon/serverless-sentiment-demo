@@ -7,3 +7,8 @@ venv/
 *.log
 .DS_Store
 node_modules/
+
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
