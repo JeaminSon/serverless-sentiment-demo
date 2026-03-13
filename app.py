@@ -6,7 +6,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 from mangum import Mangum
 
-COLD_START = True
+COLD_START = True 
 MODEL_DIR = os.environ.get("MODEL_DIR", "/opt/model")
 LABEL_MAP = {"0": "NEGATIVE", "1": "POSITIVE"}
 RATE_LIMIT_WINDOW_SEC = 60
