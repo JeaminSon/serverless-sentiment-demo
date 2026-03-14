@@ -52,7 +52,7 @@ resource "aws_s3_bucket_public_access_block" "model_bucket_block" {
   restrict_public_buckets = true
 }
 
-resource "aws_iam_role_policy" "lambda_s3_readonly" {
+resource "lambda_s3_readonly" {
   name = "lambda_s3_readonly_policy"
   role = element(split("/", data.aws_lambda_function.existing_lambda_info.role), length(split("/", data.aws_lambda_function.existing_lambda_info.role)) - 1)
 
