@@ -38,3 +38,36 @@ data "aws_lambda_function" "existing_lambda_info" {
 output "lambda_arn" {
   value = data.aws_lambda_function.existing_lambda_info.arn
 }
+
+resource "aws_s3_bucket" "model_bucket" {
+  bucket = "sentiment-model-storage-jambread" 
+}
+
+resource "aws_s3_bucket_public_access_block" "model_bucket_block" {
+  bucket = aws_s3_bucket.model_bucket.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+resource "aws_iam_role_policy" "lambda_s3_readonly" {
+  name = "lambda_s3_readonly_policy"
+  role = aws_iam_role.iam_for_lambda.name # 기존 람다의 IAM Role 이름을 입력하세요.
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["s3:GetObject", "s3:ListBucket"]
+        Effect   = "Allow"
+        Resource = [
+          "${aws_s3_bucket.model_bucket.arn}",
+          "${aws_s3_bucket.model_bucket.arn}/*"
+        ]
+      }
+    ]
+  })
+}
+
