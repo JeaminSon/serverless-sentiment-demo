@@ -40,9 +40,13 @@ model = None
 def get_model():
     global tokenizer, model
     if tokenizer is None or model is None:
-        download_model_from_s3() # S3에서 먼저 가져오기
+        download_model_from_s3()
         tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
-        model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
+        # output_attentions 설정을 추가합니다.
+        model = AutoModelForSequenceClassification.from_pretrained(
+            MODEL_DIR, 
+            output_attentions=True 
+        )
         model.eval()
     return tokenizer, model
 
@@ -75,10 +79,21 @@ def predict(inp: PredictIn, request: Request):
     try:
         inputs = tk(text, return_tensors="pt", truncation=True, max_length=256)
         with torch.no_grad():
-            logits = md(**inputs).logits
-            probs = torch.softmax(logits, dim=-1)[0]
-            pred_id = int(torch.argmax(probs).item())
-            score = float(probs[pred_id].item())
+            outputs = md(**inputs)
+        logits = outputs.logits
+        attentions = outputs.attentions[-1] 
+        avg_attention = attentions[0].mean(dim=0).mean(dim=0)
+        
+        tokens = tk.convert_ids_to_tokens(inputs['input_ids'][0])
+        token_scores = []
+        for i, (token, score_val) in enumerate(zip(tokens, avg_attention.tolist())):
+            if token not in [tk.cls_token, tk.sep_token, tk.pad_token]:
+                token_scores.append((token.replace('##', ''), score_val))
+        
+        top_words = sorted(token_scores, key=lambda x: x[1], reverse=True)[:3]
+        top_word_list = [w[0] for w in top_words]
+
+        probs = torch.softmax(logits, dim=-1)[0]
     except Exception as e:
         print({"msg": "predict_error", "err": str(e)})
         raise HTTPException(status_code=500, detail="inference failed")
@@ -87,7 +102,14 @@ def predict(inp: PredictIn, request: Request):
     raw_label = str(pred_id)
     label = LABEL_MAP.get(raw_label, raw_label)
     latency_ms = int((time.time() - t0) * 1000)
-    return {"label": label, "score": score, "raw_label": raw_label, "latency_ms": latency_ms, "cold_start": cold}
+    return {
+        "label": label,
+        "score": score,
+        "analysis": {
+            "top_influential_words": top_word_list 
+        },
+        "latency_ms": latency_ms
+    }
 
 # ... (IP 추출 및 Rate Limit 함수는 그대로 유지) ...
 handler = Mangum(app)
