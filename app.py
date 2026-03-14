@@ -1,4 +1,7 @@
-import os, time, boto3
+import os
+os.environ['TRANSFORMERS_CACHE'] = '/tmp'
+os.environ['HF_HOME'] = '/tmp'
+import time, boto3
 from fastapi import FastAPI, HTTPException, Request
 from collections import deque
 from pydantic import BaseModel
