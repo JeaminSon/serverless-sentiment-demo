@@ -7,7 +7,7 @@ from collections import deque
 from pydantic import BaseModel
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
-from mangum import Mangum
+from mangum import Mangum 
 
 COLD_START = True 
 # 1. 경로 설정 수정: 람다의 쓰기 가능 공간인 /tmp를 사용합니다.
