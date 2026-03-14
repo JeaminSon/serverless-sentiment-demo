@@ -1,6 +1,6 @@
 FROM public.ecr.aws/lambda/python:3.12 AS builder
 
-RUN dnf install -y gcc-c++
+WORKDIR /var/task
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --target /install -r requirements.txt
@@ -10,9 +10,10 @@ RUN python download_model.py
 
 FROM public.ecr.aws/lambda/python:3.12
 
-COPY --from=builder /install /var/task
+WORKDIR /var/task
 
-COPY --from=builder /var/task/model /var/task/model
+COPY --from=builder /var/lang/lib/python3.12/site-packages /var/lang/lib/python3.12/site-packages
+COPY --from=builder /var/task /var/task
 
 COPY app.py .
 CMD ["app.handler"]
