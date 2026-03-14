@@ -61,6 +61,7 @@ resource "aws_s3_bucket_public_access_block" "model_bucket_block" {
 
 resource "aws_iam_role_policy" "lambda_s3" {
   name = "lambda_s3_policy"
+  
   role = element(split("/", data.aws_lambda_function.existing_lambda_info.role), length(split("/", data.aws_lambda_function.existing_lambda_info.role)) - 1)
 
   policy = jsonencode({
@@ -70,11 +71,10 @@ resource "aws_iam_role_policy" "lambda_s3" {
         Effect = "Allow"
         Action = ["s3:GetObject", "s3:ListBucket"]
         Resource = [
-          "arn:aws:s3:::${var.bucket_name}",
-          "arn:aws:s3:::${var.bucket_name}/*"
+          aws_s3_bucket.model_bucket.arn,
+          "${aws_s3_bucket.model_bucket.arn}/*"
         ]
       }
     ]
   })
 }
-
