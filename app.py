@@ -34,7 +34,7 @@ def download_model_from_s3():
         target = os.path.join(MODEL_DIR, f)
         if not os.path.exists(target):
             print(f"Downloading {f} from S3...")
-            s3.download_file(BUCKET_NAME, f"temp_model/{f}", target)
+            s3.download_file(BUCKET_NAME, f, target)
 
 # 2. 로딩 로직 변경: 전역 변수로 두고 필요할 때 로드 (Lazy Loading)
 tokenizer = None
