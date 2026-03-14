@@ -29,6 +29,12 @@ resource "aws_lambda_function" "sentiment_api" {
   image_uri     = "${data.aws_ecr_repository.existing_ecr.repository_url}:latest"
   
   role          = data.aws_lambda_function.existing_lambda_info.role
+  
+  environment {
+    variables = {
+      MODEL_BUCKET_NAME = aws_s3_bucket.model_bucket.id
+    }
+  }
 }
 
 data "aws_lambda_function" "existing_lambda_info" {
