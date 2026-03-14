@@ -16,7 +16,7 @@ RATE_LIMIT_MAX_REQUESTS = 20
 
 _RATE_BUCKET = {} 
 
-app = FastAPI(title="Korean Sentiment API")
+app = FastAPI(title="Korean Sentiment API") #앙
 
 # --- [추가] S3에서 모델을 가져오는 함수 ---
 def download_model_from_s3():
