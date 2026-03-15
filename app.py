@@ -142,4 +142,4 @@ def predict(inp: PredictIn, request: Request):
         "cold_start": cold
     } 
  
-handler = Mangum(app)
+handler = Mangum(app) 
