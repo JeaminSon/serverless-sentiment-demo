@@ -24,10 +24,10 @@ def download_model_from_s3():
     
     # S3에 저장된 실제 키 리스트
     files = [
-        'temp_model/model_config.json', 
-        'temp_model/model_model.safetensors', 
-        'temp_model/model_tokenizer.json', 
-        'temp_model/model_tokenizer_config.json'
+        'temp_model/config.json', 
+        'temp_model/model.safetensors', 
+        'temp_model/tokenizer.json', 
+        'temp_model/tokenizer_config.json'
     ]
     
     for s3_key in files:
