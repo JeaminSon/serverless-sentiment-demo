@@ -20,35 +20,44 @@ def download_model_from_s3():
     if not os.path.exists(MODEL_DIR):
         os.makedirs(MODEL_DIR, exist_ok=True)
     
-    # S3 키 리스트 (경로 구분자 주의)
-    files = ['temp_model/config.json', 'temp_model/model.safetensors', 'temp_model/tokenizer.json', 'temp_model/tokenizer_config.json']
+    # [중요] S3 경로 재확인: 슬래시(/) 사용
+    files = [
+        'temp_model/config.json', 
+        'temp_model/model.safetensors', 
+        'temp_model/tokenizer.json', 
+        'temp_model/tokenizer_config.json'
+    ]
     
     for s3_key in files:
         file_name = s3_key.split('/')[-1]
         target = os.path.join(MODEL_DIR, file_name)
+        
         if not os.path.exists(target):
+            # 로그를 남겨서 어디서 멈추는지 확인합니다.
+            print(f"Downloading {s3_key} to {target}...")
             try:
-                print(f"Attempting to download {s3_key} from bucket {BUCKET_NAME}...")
                 s3.download_file(BUCKET_NAME, s3_key, target)
-                print(f"Successfully downloaded {file_name}")
             except Exception as e:
-                # 에러가 발생하면 어떤 경로에서 실패했는지 정확히 출력합니다.
-                print(f"Error downloading {s3_key}: {str(e)}")
+                print(f"S3 Download Error: {str(e)}")
                 raise e
 
+# 전역 변수는 그대로 둡니다.
 tokenizer = None
 model = None
 
 def get_model():
     global tokenizer, model
+    # 여기서 다운로드와 로드를 모두 수행하여 '초기화 타임아웃'을 피합니다.
     if tokenizer is None or model is None:
         download_model_from_s3()
+        print("Loading model into memory...")
         tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_DIR, 
             output_attentions=True 
         )
         model.eval()
+        print("Model loaded successfully.")
     return tokenizer, model
 
 class PredictIn(BaseModel):
