@@ -22,7 +22,7 @@ def download_model_from_s3():
     if not os.path.exists(MODEL_DIR):
         os.makedirs(MODEL_DIR, exist_ok=True)
     
-    # S3에 저장된 실제 키 리스트 (슬래시 구분)
+    # S3에 저장된 실제 키 리스트
     files = [
         'temp_model/model_config.json', 
         'temp_model/model_model.safetensors', 
@@ -31,9 +31,14 @@ def download_model_from_s3():
     ]
     
     for s3_key in files:
-        # [핵심] model_ 접두사를 제거하여 라이브러리가 인식 가능한 표준 파일명으로 변환
-        # 예: model_config.json -> config.json
-        file_name = s3_key.split('/')[-1].replace('model_model', 'model').replace('model_', '')
+        # [핵심 수정] 가중치 파일 인식 문제 해결
+        # model_model.safetensors -> model.safetensors로 정확히 변환되어야 라이브러리가 읽습니다.
+        raw_file_name = s3_key.split('/')[-1]
+        if 'model_model.safetensors' in raw_file_name:
+            file_name = 'model.safetensors'
+        else:
+            file_name = raw_file_name.replace('model_', '')
+            
         target = os.path.join(MODEL_DIR, file_name)
         
         if not os.path.exists(target):
@@ -49,11 +54,10 @@ model = None
 
 def get_model():
     global tokenizer, model
-    # 모델 로드 전용 함수 (Lazy Loading)
     if tokenizer is None or model is None:
         download_model_from_s3()
         print("Loading model weights into memory...")
-        # /tmp/model 안의 config.json 등을 읽어 가중치 로드
+        # /tmp/model 안의 표준화된 파일명들을 로드
         tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_DIR, 
@@ -95,21 +99,20 @@ def predict(inp: PredictIn, request: Request):
         pos_prob = float(probs[1])
         diff = abs(pos_prob - neg_prob) 
 
-        # --- 중립(Neutral) 판별 및 설명 로직 ---
-        # 긍정/부정 확률 차이가 15% 미만이면 모델이 갈등하는 상태로 간주
+        # --- 중립(Neutral) 판별 로직 ---
         if diff < 0.15:
             label = "NEUTRAL"
             score = max(pos_prob, neg_prob)
             reason = "긍정과 부정의 특징이 모두 미미하거나 비슷하게 나타납니다."
-            advice = "문장에 감정을 나타내는 구체적인 형용사를 추가해 보세요."
+            advice = "문장에 감정을 나타내는 구체적인 단어를 섞어보세요."
         else:
             pred_id = torch.argmax(probs).item()
             label = LABEL_MAP.get(str(pred_id), str(pred_id))
             score = float(probs[pred_id])
-            reason = f"모델이 {score*100:.1f}%의 확률로 {label}의 특징을 감지했습니다."
-            advice = "분석이 성공적으로 완료되었습니다."
+            reason = f"모델이 {score*100:.1f}%의 확률로 {label} 특징을 감지했습니다."
+            advice = "분석이 안정적으로 수행되었습니다."
 
-        # Attention 분석 (영향력 있는 단어 Top 3)
+        # Attention 분석
         attentions = outputs.attentions[-1]
         avg_attention = attentions[0].mean(dim=0).mean(dim=0)
         tokens = tk.convert_ids_to_tokens(inputs['input_ids'][0])
