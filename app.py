@@ -141,5 +141,5 @@ def predict(inp: PredictIn, request: Request):
         "latency_ms": latency_ms,
         "cold_start": cold
     } 
-
+ 
 handler = Mangum(app)
