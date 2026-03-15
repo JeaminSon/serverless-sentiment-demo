@@ -82,10 +82,32 @@ def predict(inp: PredictIn, request: Request):
         inputs = tk(text, return_tensors="pt", truncation=True, max_length=256)
         with torch.no_grad():
             outputs = md(**inputs)
-        logits = outputs.logits
-        attentions = outputs.attentions[-1] 
-        avg_attention = attentions[0].mean(dim=0).mean(dim=0)
         
+        logits = outputs.logits
+        probs = torch.softmax(logits, dim=-1)[0]
+        
+        # 긍정/부정 확률 추출 (0: NEG, 1: POS)
+        neg_prob = float(probs[0])
+        pos_prob = float(probs[1])
+        diff = abs(pos_prob - neg_prob) # 두 확률의 차이 계산
+
+        # --- 중립 판별 및 신뢰도 설명 로직 ---
+        # 우선순위: 차이가 0.15(15%) 미만이면 무조건 중립 처리
+        if diff < 0.15:
+            label = "NEUTRAL"
+            score = max(pos_prob, neg_prob) # 둘 중 높은 쪽을 일단 점수로 표기
+            reason = "긍정과 부정의 특징이 모두 미미하거나 비슷하게 나타납니다."
+            advice = "문장에 '슬프다', '기쁘다'와 같은 감정 표현을 섞어보세요."
+        else:
+            pred_id = torch.argmax(probs).item()
+            label = LABEL_MAP.get(str(pred_id), str(pred_id))
+            score = float(probs[pred_id])
+            reason = f"모델이 {score*100:.1f}%의 확률로 {label}의 특징을 감지했습니다."
+            advice = "분석이 안정적으로 수행되었습니다."
+
+        # (Attention 분석 로직 - 기존과 동일)
+        attentions = outputs.attentions[-1]
+        avg_attention = attentions[0].mean(dim=0).mean(dim=0)
         tokens = tk.convert_ids_to_tokens(inputs['input_ids'][0])
         token_scores = []
         for i, (token, score_val) in enumerate(zip(tokens, avg_attention.tolist())):
@@ -95,23 +117,19 @@ def predict(inp: PredictIn, request: Request):
         top_words = sorted(token_scores, key=lambda x: x[1], reverse=True)[:3]
         top_word_list = [w[0] for w in top_words]
 
-        probs = torch.softmax(logits, dim=-1)[0]
-        pred_id = torch.argmax(probs).item()
-        score = float(probs[pred_id])
-        
     except Exception as e:
         print({"msg": "predict_error", "err": str(e)})
         raise HTTPException(status_code=500, detail="inference failed")
 
-    # (이후 리턴 로직은 동일)
-    raw_label = str(pred_id)
-    label = LABEL_MAP.get(raw_label, raw_label)
     latency_ms = int((time.time() - t0) * 1000)
+    
     return {
         "label": label,
         "score": score,
         "analysis": {
-            "top_influential_words": top_word_list 
+            "reason": reason,
+            "advice": advice,
+            "top_influential_words": top_word_list
         },
         "latency_ms": latency_ms
     } 
