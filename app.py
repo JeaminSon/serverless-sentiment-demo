@@ -27,8 +27,14 @@ def download_model_from_s3():
         file_name = s3_key.split('/')[-1]
         target = os.path.join(MODEL_DIR, file_name)
         if not os.path.exists(target):
-            print(f"Downloading {s3_key} from S3...")
-            s3.download_file(BUCKET_NAME, s3_key, target)
+            try:
+                print(f"Attempting to download {s3_key} from bucket {BUCKET_NAME}...")
+                s3.download_file(BUCKET_NAME, s3_key, target)
+                print(f"Successfully downloaded {file_name}")
+            except Exception as e:
+                # 에러가 발생하면 어떤 경로에서 실패했는지 정확히 출력합니다.
+                print(f"Error downloading {s3_key}: {str(e)}")
+                raise e
 
 tokenizer = None
 model = None
