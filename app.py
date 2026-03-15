@@ -33,7 +33,7 @@ def download_model_from_s3():
         file_name = s3_key.split('\\')[-1]
         target = os.path.join(MODEL_DIR, file_name)
         if not os.path.exists(target):
-            print(f"Downloading {sk_key} from S3...")
+            print(f"Downloading {s3_key} from S3...")
             s3.download_file(BUCKET_NAME, s3_key, target)
 
 # 2. 로딩 로직 변경: 전역 변수로 두고 필요할 때 로드 (Lazy Loading)
