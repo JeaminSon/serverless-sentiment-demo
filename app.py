@@ -11,7 +11,7 @@ from mangum import Mangum
 
 COLD_START = True 
 MODEL_DIR = "/tmp/model" 
-BUCKET_NAME = os.environ.get("MODEL_BUCKET_NAME") # 테라폼에서 넣은 환경변수
+BUCKET_NAME = os.environ.get("MODEL_BUCKET_NAME") 
 LABEL_MAP = {"0": "NEGATIVE", "1": "POSITIVE"}
 RATE_LIMIT_WINDOW_SEC = 60
 RATE_LIMIT_MAX_REQUESTS = 20
