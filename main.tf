@@ -24,7 +24,7 @@ resource "aws_lambda_function" "sentiment_api" {
   function_name = "sentiment-api"
   
   memory_size   = 2048 
-  timeout     = 60
+  timeout     = 120
 
   package_type  = "Image"
   image_uri     = "${data.aws_ecr_repository.existing_ecr.repository_url}:latest"
