@@ -21,7 +21,7 @@ def download_model_from_s3():
         os.makedirs(MODEL_DIR, exist_ok=True)
     
     # S3 키 리스트 (경로 구분자 주의)
-    files = ['model/config.json', 'model/model.safetensors', 'model/tokenizer.json', 'model/tokenizer_config.json']
+    files = ['temp_model\config.json', 'temp_model\model.safetensors', 'temp_model\tokenizer.json', 'temp_model\tokenizer_config.json']
     
     for s3_key in files:
         file_name = s3_key.split('/')[-1]
