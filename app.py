@@ -97,6 +97,9 @@ def predict(inp: PredictIn, request: Request):
         top_word_list = [w[0] for w in top_words]
 
         probs = torch.softmax(logits, dim=-1)[0]
+        pred_id = torch.argmax(probs).item()
+        score = float(probs[pred_id])
+        
     except Exception as e:
         print({"msg": "predict_error", "err": str(e)})
         raise HTTPException(status_code=500, detail="inference failed")
