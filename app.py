@@ -71,7 +71,7 @@ def predict(inp: PredictIn, request: Request):
     t0 = time.time()
     now = t0
     #ip = _get_client_ip(request)
-    _rate_limit_check(ip, now)
+    #_rate_limit_check(ip, now)
 
     text = (inp.text or "").strip() [:1000] 
     if not text:
