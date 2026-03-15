@@ -29,18 +29,12 @@ def download_model_from_s3():
     ]
     
     for s3_key in files:
-        file_name = s3_key.split('/')[-1]
+        file_name = s3_key.split('/')[-1].replace('model_', '')
         target = os.path.join(MODEL_DIR, file_name)
         
         if not os.path.exists(target):
-            # 로그를 남겨서 어디서 멈추는지 확인합니다.
-            print(f"Downloading {s3_key} to {target}...")
-            try:
-                s3.download_file(BUCKET_NAME, s3_key, target)
-            except Exception as e:
-                print(f"S3 Download Error: {str(e)}")
-                raise e
-
+            print(f"Downloading {s3_key} to {target}...") 
+            s3.download_file(BUCKET_NAME, s3_key, target)
 # 전역 변수는 그대로 둡니다.
 tokenizer = None
 model = None
