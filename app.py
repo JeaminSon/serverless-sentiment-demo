@@ -27,14 +27,14 @@ def download_model_from_s3():
     if not os.path.exists(MODEL_DIR):
         os.makedirs(MODEL_DIR, exist_ok=True)
     
-    # 우리가 업로드한 파일들 (image_31af1e.png 참고)
-    files = ['config.json', 'model.safetensors', 'tokenizer.json', 'tokenizer_config.json', 'special_tokens_map.json']
+    files = ['model\\config.json', 'model\\model.safetensors', 'model\\tokenizer.json', 'model\\tokenizer_config.json']
     
-    for f in files:
-        target = os.path.join(MODEL_DIR, f)
+    for s3_key in files:
+        file_name = s3_key.split('\\')[-1]
+        target = os.path.join(MODEL_DIR, file_name)
         if not os.path.exists(target):
-            print(f"Downloading {f} from S3...")
-            s3.download_file(BUCKET_NAME, f, target)
+            print(f"Downloading {sk_key} from S3...")
+            s3.download_file(BUCKET_NAME, s3_key, target)
 
 # 2. 로딩 로직 변경: 전역 변수로 두고 필요할 때 로드 (Lazy Loading)
 tokenizer = None
