@@ -10,7 +10,6 @@ import torch
 from mangum import Mangum 
 
 COLD_START = True 
-# 1. 경로 설정 수정: 람다의 쓰기 가능 공간인 /tmp를 사용합니다.
 MODEL_DIR = "/tmp/model" 
 BUCKET_NAME = os.environ.get("MODEL_BUCKET_NAME") # 테라폼에서 넣은 환경변수
 LABEL_MAP = {"0": "NEGATIVE", "1": "POSITIVE"}
@@ -115,7 +114,7 @@ def predict(inp: PredictIn, request: Request):
             "top_influential_words": top_word_list 
         },
         "latency_ms": latency_ms
-    }
+    } 
 
 # ... (IP 추출 및 Rate Limit 함수는 그대로 유지) ...
 handler = Mangum(app)
