@@ -6,7 +6,7 @@ os.environ['HF_HOME'] = '/tmp'
 import time, boto3
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from transformers import AutoTokenizer, ElectraTokenizer, AutoModelForSequenceClassification
 import torch
 from mangum import Mangum
 
@@ -58,9 +58,16 @@ def get_model():
         download_model_from_s3()
         print("Loading model weights into memory...")
         # /tmp/model 안의 표준화된 파일명들을 로드
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
+        try:
+            tokenizer = ElectraTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
+            print("Successfully loaded ElectraTokenizer")
+        except Exception as e:
+            print(f"Fallback to AutoTokenizer due to: {e}")
+            tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
+            
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_DIR, 
+            local_files_only=True,
             output_attentions=True 
         )
         model.eval()
