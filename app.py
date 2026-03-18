@@ -28,7 +28,7 @@ def download_model_from_s3():
         'temp_model/model.safetensors', 
         'temp_model/tokenizer.json', 
         'temp_model/tokenizer_config.json',
-        'temp_model/model_vocab.txt'
+        'temp_model/vocab.txt'
     ]
     
     for s3_key in files:
