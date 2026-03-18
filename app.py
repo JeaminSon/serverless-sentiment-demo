@@ -27,7 +27,8 @@ def download_model_from_s3():
         'temp_model/config.json', 
         'temp_model/model.safetensors', 
         'temp_model/tokenizer.json', 
-        'temp_model/tokenizer_config.json'
+        'temp_model/tokenizer_config.json',
+        'temp_model/model_vocab.txt'
     ]
     
     for s3_key in files:
@@ -57,14 +58,14 @@ def get_model():
     if tokenizer is None or model is None:
         download_model_from_s3()
         print("Loading model weights into memory...")
-        # /tmp/model 안의 표준화된 파일명들을 로드
-        try:
-            tokenizer = ElectraTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
-            print("Successfully loaded ElectraTokenizer")
-        except Exception as e:
-            print(f"Fallback to AutoTokenizer due to: {e}")
-            tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
-            
+        
+        # use_fast=True 옵션을 주어 TokenizersBackend 에러를 방지합니다.
+        tokenizer = AutoTokenizer.from_pretrained(
+            MODEL_DIR, 
+            local_files_only=True, 
+            use_fast=True 
+        )
+        
         model = AutoModelForSequenceClassification.from_pretrained(
             MODEL_DIR, 
             local_files_only=True,
