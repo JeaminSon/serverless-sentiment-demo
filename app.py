@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from transformers import ElectraTokenizer, AutoModelForSequenceClassification
 import torch
 from mangum import Mangum
+import uuid
 
 COLD_START = True 
 MODEL_DIR = "/tmp/model" 
@@ -149,5 +150,23 @@ def predict(inp: PredictIn, request: Request):
         "latency_ms": latency_ms,
         "cold_start": cold
     } 
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('SentimentAnalysisLog')
+
+def lambda_handler(event, context):
+    try:
+        log_item = {
+            'requestId': str(uuid.uuid4()),
+            'timestamp': int(time.time()),
+            'label': result['label'],      # 긍정/부정 결과만 저장
+            'confidence': Decimal(str(result['score'])), # 신뢰도 숫자 저장
+            'latency_ms': 17               # 측정된 지연 시간
+        }
+        table.put_item(Item=log_item)
+    except Exception as e:
+        print(f"DB 저장 중 오류 발생(무시하고 진행): {e}")
+        
+    return result
  
 handler = Mangum(app)  

@@ -5,7 +5,7 @@ A static web UI is hosted on S3 + CloudFront and calls the Lambda Function URL
 
 ## Demo
 - Web (CloudFront): https://d1s8pxdb9ftrht.cloudfront.net
-- API (Lambda Function URL): https://2r5xcr2sl7fdgiokzns35gfw5m0vmcuc.lambda-url.ap-northeast-2.on.aws/predict
+- API (Lambda Function URL):https://u1i1chh9h5.execute-api.ap-northeast-2.amazonaws.com/
 
 
 ## Architecture
@@ -59,7 +59,7 @@ Implemented in-app per-IP rate limiting:
 Limit: 20 requests / 60 seconds
 Keyed by client IP (X-Forwarded-For)
 Returns HTTP 429 when exceeded
-⚠️ Note:
+Note:
 This is enforced per Lambda execution environment
 Under high concurrency, limits may be distributed
 Future hardening
@@ -104,10 +104,47 @@ Collapsible dashboard UI
 - Resolved AWS IAM Permissions Boundary issues related to S3/Lambda access.
 - Managed S3 Bucket Region mismatch (ap-northeast-2 vs us-east-1) during Backend migration.
 
-### 🔔 Real-time Monitoring & Notifications
+### Real-time Monitoring & Notifications
 - **Tool**: Discord Webhook Integration
 - **Feature**: Automated deployment status reports.
 - **Details**: 
   - Sends real-time notifications to Discord upon GitHub Actions workflow completion (Success/Failure).
   - Includes deployment metadata: Commits, Author, Workflow status, and direct links to Action logs.
   - Enables rapid feedback loops for the development team.
+
+#  Serverless Sentiment Analysis Demo (KoELECTRA)
+
+이 프로젝트는 AWS Lambda와 S3를 활용하여 영화 리뷰 감성 분석(NSMC)을 수행하는 서버레스 데모입니다.
+
+## 기술 스택
+- **Model**: `daekeun-ml/koelectra-small-v3-nsmc`
+- **Infrastructure**: AWS Lambda (2048MB), S3, API Gateway
+- **Backend**: FastAPI, Mangum, Transformers
+
+---
+
+## 중요 트러블슈팅 기록 (필독)
+
+### 1. S3 모델 파일 구성 및 명칭
+Lambda의 `/tmp` 공간으로 다운로드할 때 파일명이 고정되어 있어야 합니다. S3 버킷의 `temp_model/` 폴더 내에 아래 이름으로 파일이 존재해야 합니다.
+- `model_config.json` (기존 config.json)
+- `model_model.safetensors` (기존 model.safetensors)
+- `model_tokenizer.json`
+- `model_tokenizer_config.json`
+- `model_vocab.txt` (매우 중요: ElectraTokenizer 작동을 위해 필수)
+
+### 2. Windows 11 환경 설정 (개발 환경)
+Windows 11 업그레이드 후 `python` 실행 시 MS Store가 열리거나 반응이 없는 경우:
+- **앱 실행 별칭 관리**: `python.exe` 및 `python3.exe`를 '끄기'로 설정.
+- **실행 권장**: `python` 대신 `py` 커맨드를 사용하거나, 실제 설치 경로(AppData 내)를 직접 사용하여 라이브러리를 설치하십시오.
+- **인코딩**: 한글 주석이 포함된 `.py` 파일은 반드시 **UTF-8**로 저장해야 `SyntaxError`를 방지할 수 있습니다.
+
+### 3. 모델 로딩 로직 (app.py)
+`AutoTokenizer` 사용 시 패키지 버전 충돌로 `ValueError`가 발생할 수 있습니다. 이 경우 `ElectraTokenizer`를 명시적으로 호출하고, S3에서 받은 `vocab.txt`를 직접 참조하도록 구성했습니다.
+
+---
+
+##  로컬 환경 설정
+1. 필요한 라이브러리 설치:
+   ```bash
+   py -m pip install transformers torch huggingface_hub
