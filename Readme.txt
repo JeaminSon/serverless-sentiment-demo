@@ -9,17 +9,15 @@ A static web UI is hosted on S3 + CloudFront and calls the Lambda Function URL
 
 
 ## Architecture
-Browser
-  ↓
-CloudFront (CDN)
-  ↓
-S3 Static Website (Frontend)
-  ↓
-Lambda Function URL
-  ↓
-FastAPI (Docker container)
-  ↓
-HuggingFace KoELECTRA model
+Browser  ──▶  CloudFront (CDN)  ──▶  S3 Static Website (Frontend)
+                                           │
+                                           ▼
+      Amazon ECR  ──────────────▶  AWS Lambda (Docker Container)
+(Container Registry)                       │
+                                    ┌──────┴──────┐
+                                    ▼             ▼
+                          HuggingFace Model    Amazon DynamoDB
+                            (KoELECTRA)       (Inference Logs)
 
 ## API
 POST /predict
@@ -148,3 +146,31 @@ Windows 11 업그레이드 후 `python` 실행 시 MS Store가 열리거나 반�
 1. 필요한 라이브러리 설치:
    ```bash
    py -m pip install transformers torch huggingface_hub
+
+## 📊 Real-time Monitoring & Database
+이 프로젝트는 서비스 성능 모니터링 및 모델의 판단 경향성 분석을 위해 **Privacy-First** 로그 파이프라인을 구축했습니다.
+
+- [cite_start]**Storage**: Amazon DynamoDB (`SentimentAnalysisLog` 테이블) [cite: 12]
+- **Data Schema**:
+    - `requestId`: 고유 식별자 (UUID)
+    - `timestamp`: 추론 시점 (Unix Timestamp, Number 타입)
+    - `label`: 감성 분석 결과 (POSITIVE / NEGATIVE / NEUTRAL)
+    - `confidence`: 모델 신뢰도 (Decimal 타입)
+    - `latency_ms`: 처리 지연 시간
+- **Privacy Design**: 사용자의 원문 텍스트(Raw Text)는 절대 저장하지 않으며, 분석 결과값(Metadata)만 수집하여 보안성을 강화했습니다.
+
+### 4. Docker 기반 Lambda 배포 이슈 (CI/CD)
+- [cite_start]**현상**: Git Push만으로 Lambda 코드가 갱신되지 않는 문제 발생. [cite: 5]
+- [cite_start]**원인**: 컨테이너 방식은 이미지 빌드(Build) -> ECR 푸시(Push) -> 함수 업데이트(UpdateFunctionCode) 과정이 필수적임. [cite: 5]
+- **해결**: AWS CLI를 이용해 최신 ECR 이미지를 배포(Deploy)하도록 프로세스를 정립함.
+
+### 5. DynamoDB 데이터 타입 불일치 (ValidationException)
+- **현상**: `PutItem` 실행 시 `Type mismatch for key timestamp` 에러 발생.
+- **원인**: DynamoDB 테이블 생성 시 `timestamp`를 숫자(N)로 설정했으나, Python 코드에서 문자열로 전송함.
+- [cite_start]**해결**: 기존 테이블을 삭제 후 정렬 키(Sort Key) 타입을 숫자로 재설계하여 쿼리 효율성(범위 검색 및 정렬)을 최적화함. [cite: 4]
+
+## 기술 스택 (Updated)
+- **Database**: Amazon DynamoDB (NoSQL)
+- [cite_start]**Container**: Docker, Amazon ECR 
+- [cite_start]**Language**: Python 3.12, FastAPI [cite: 12, 15]
+- [cite_start]**Monitoring**: CloudWatch, Discord Webhook [cite: 8, 9]
