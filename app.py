@@ -164,6 +164,7 @@ def lambda_handler(event, context):
             'latency_ms': 17               # 측정된 지연 시간
         }
         table.put_item(Item=log_item)
+        print("DB 저장 성공!")
     except Exception as e:
         print(f"DB 저장 중 오류 발생(무시하고 진행): {e}")
         
