@@ -3,11 +3,12 @@ import streamlit as st
 import boto3
 import pandas as pd
 import plotly.express as px
+import os
 from datetime import datetime
 
 
-USER_ID = "jambread"         
-USER_PW = "jambreadson77!" 
+USER_ID = st.secrets.get("USER_ID", "jambread")       
+USER_PW = st.secrets.get("USER_PW", "jambreadson77!")
 
 
 def login():
