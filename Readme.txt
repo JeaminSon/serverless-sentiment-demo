@@ -8,17 +8,19 @@ A static web UI is hosted on S3 + CloudFront and calls the Lambda Function URL
 - API (Lambda Function URL):https://u1i1chh9h5.execute-api.ap-northeast-2.amazonaws.com/
 
 
-## Architecture
-Browser  ──▶  CloudFront (CDN)  ──▶  S3 Static Website (Frontend)
-                                           │
-                                           ▼
-      Amazon ECR  ──────────────▶  AWS Lambda (Docker Container)
-(Container Registry)                       │
-                                    ┌──────┴──────┐
-                                    ▼             ▼
-                          HuggingFace Model    Amazon DynamoDB
-                            (KoELECTRA)       (Inference Logs)
-
+[User Browser] ────▶ [CloudFront (CDN)] ────▶ [S3 Static Web]
+                                          │
+                                          ▼
+      [Amazon ECR] ────────────▶ [AWS Lambda (Docker)]
+ (Container Registry)                     │
+                                  ┌───────┴───────┐
+                                  ▼               ▼
+                        [HuggingFace Model] [Amazon DynamoDB]
+                          (KoELECTRA)      (Inference Logs)
+                                                  │
+                                                  ▼
+                                         [Streamlit Dashboard]
+                                         (Real-time Monitoring)
 ## API
 POST /predict
 Request
