@@ -1,9 +1,3 @@
-# [Dashboard 용 - 맨 위로 배치]
-streamlit
-pandas
-plotly
-boto3
-
 # [Lambda 용 - 아래로 배치]
 numpy<2.0.0
 fastapi==0.110.0
