@@ -41,7 +41,7 @@ if login():
     @st.cache_data(ttl=60)
     def load_data():
         try:
-            dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
+            dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2', aws_access_key_id=st.secrets["aws"]["aws_access_key_id"], aws_secret_access_key=st.secrets["aws"]["aws_secret_access_key"])
             table = dynamodb.Table('SentimentAnalysisLog')
             response = table.scan()
             items = response.get('Items', [])
