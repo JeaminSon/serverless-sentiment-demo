@@ -32,6 +32,7 @@ def download_model_from_s3():
     files = [
         'temp_model/config.json', 
         'temp_model/model.onnx', # .safetensors 대신 .onnx
+        'temp_model/model.onnx.data'
         'temp_model/tokenizer.json', 
         'temp_model/tokenizer_config.json', 
         'temp_model/vocab.txt'
