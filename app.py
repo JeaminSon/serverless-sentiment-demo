@@ -26,7 +26,7 @@ def download_model_from_s3():
     """S3에서 ONNX 모델 및 설정 파일 다운로드"""
     s3 = boto3.client('s3')
     if not os.path.exists(MODEL_DIR):
-        os.makedirs(MODEL_DIR, exist_ok=True)
+        os.makedirs(MODEL_DIR, exist_ok=True) 
     
     # [수정] 다운로드할 파일 목록에 model.onnx 추가
     files = [
