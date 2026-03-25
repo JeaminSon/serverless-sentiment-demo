@@ -50,4 +50,8 @@ GitHub에 코드를 Push하면 인프라 업데이트부터 배포까지 자동�
 4.  Notification: Discord Webhook을 통해 배포 메타데이터(커밋, 작성자, 상태) 실시간 알림 
 
 ---
-
+## ⚡ Performance Optimization (ONNX)
+* **Cold Start**: ~10s ➔ **~0.1s (100배 개선)**
+* **Warm Start**: ~28ms ➔ **~5ms (5배 개선)**
+* **Build Time**: ~5m 40s ➔ **~2m 36s (2배 개선)**
+* **Optimization**: PyTorch 모델을 ONNX Runtime으로 전환하여 의존성 경량화 및 추론 속도 최적화 달성

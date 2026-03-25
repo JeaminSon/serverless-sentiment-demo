@@ -19,6 +19,7 @@ COLD_START = True
 MODEL_DIR = "/tmp/model" 
 BUCKET_NAME = os.environ.get("MODEL_BUCKET_NAME") 
 LABEL_MAP = {"0": "NEGATIVE", "1": "POSITIVE"}
+API_KEY = os.environ.get("MY_API_KEY")
 
 app = FastAPI(title="Korean Sentiment API (ONNX)")
 
@@ -86,6 +87,11 @@ def health(): return {"ok": True}
 
 @app.post("/predict")
 def predict(inp: PredictIn, request: Request):
+    client_api_key = request.headers.get("x-api-key")
+    
+    if client_api_key != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid or missing API Key")
+
     global COLD_START
     tk, session = get_model() 
     
