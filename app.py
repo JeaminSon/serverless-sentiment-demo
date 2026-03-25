@@ -11,6 +11,8 @@ from transformers import ElectraTokenizer
 import onnxruntime as ort
 from mangum import Mangum
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Depends, Security
+from fastapi.security.api_key import APIKeyHeader
 
 # --- DynamoDB 설정 ---
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
@@ -20,7 +22,8 @@ COLD_START = True
 MODEL_DIR = "/tmp/model" 
 BUCKET_NAME = os.environ.get("MODEL_BUCKET_NAME") 
 LABEL_MAP = {"0": "NEGATIVE", "1": "POSITIVE"}
-API_KEY = os.environ.get("MY_API_KEY")
+API_KEY_NAME = "x-api-key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 app = FastAPI(title="Korean Sentiment API (ONNX)")
 
@@ -31,6 +34,12 @@ app.add_middleware(
     allow_methods=["*"], 
     allow_headers=["*"],  
 )
+
+async def get_api_key(header_value: str = Security(api_key_header)):
+    if header_value != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+    return header_value
+
 def download_model_from_s3():
     """S3에서 ONNX 모델 및 설정 파일 다운로드"""
     s3 = boto3.client('s3')
@@ -95,16 +104,7 @@ def health(): return {"ok": True}
 
 @app.post("/predict")
 async def predict(inp: PredictIn, request: Request):
-    # [핵심] 브라우저의 사전 확인(OPTIONS) 요청은 인증을 건너뜁니다.
-    if request.method == "OPTIONS":
-        return {"ok": True}
-
-    # 실제 데이터가 오가는 POST 요청일 때만 키를 검사합니다.
-    client_api_key = request.headers.get("x-api-key")
     
-    if client_api_key != API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid or missing API Key")
-
     global COLD_START
     tk, session = get_model() 
     
