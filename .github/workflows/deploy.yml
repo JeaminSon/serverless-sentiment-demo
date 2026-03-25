@@ -60,10 +60,17 @@ jobs:
     
     - name: Update Lambda function
       run: |
+        # 1. 이미지 업데이트 실행
         aws lambda update-function-code \
           --function-name sentiment-api \
           --image-uri ${{ steps.login-ecr.outputs.registry }}/sentiment-lambda:latest
 
+        # 2. [추가] 업데이트가 완료될 때까지 대기 (ResourceConflictException 방지)
+        echo "Waiting for Lambda update to complete..."
+        aws lambda wait function-updated --function-name sentiment-api
+
+        # 3. 환경 변수 업데이트 실행
+        echo "Updating environment variables..."
         aws lambda update-function-configuration \
           --function-name sentiment-api \
           --environment "Variables={MODEL_BUCKET_NAME=sentiment-model-storage-jambread,MY_API_KEY=${{ secrets.MY_API_KEY }}}"
