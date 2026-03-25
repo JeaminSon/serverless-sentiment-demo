@@ -5,14 +5,18 @@ os.environ['HF_HOME'] = '/tmp'
 import time, boto3, uuid
 import numpy as np
 from decimal import Decimal
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Depends, Security
 from pydantic import BaseModel
 from transformers import ElectraTokenizer
 import onnxruntime as ort
 from mangum import Mangum
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import Depends, Security
 from fastapi.security.api_key import APIKeyHeader
+
+# --- 환경 변수 로드 ---
+# [주의] AWS 람다 콘솔에 MY_API_KEY와 MODEL_BUCKET_NAME이 등록되어 있어야 합니다.
+BUCKET_NAME = os.environ.get("MODEL_BUCKET_NAME")
+API_KEY = os.environ.get("MY_API_KEY", "jambreadson77!") 
 
 # --- DynamoDB 설정 ---
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
@@ -20,13 +24,21 @@ table = dynamodb.Table('SentimentAnalysisLog')
 
 COLD_START = True 
 MODEL_DIR = "/tmp/model" 
-BUCKET_NAME = os.environ.get("MODEL_BUCKET_NAME") 
 LABEL_MAP = {"0": "NEGATIVE", "1": "POSITIVE"}
+
+# --- 인증 설정 (Security Dependency) ---
 API_KEY_NAME = "x-api-key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
+async def get_api_key(header_value: str = Security(api_key_header)):
+    # 브라우저의 OPTIONS 요청은 인증을 따지지 않고 통과시켜야 CORS가 해결됩니다.
+    if header_value != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+    return header_value
+
 app = FastAPI(title="Korean Sentiment API (ONNX)")
 
+# --- CORS 설정 (최우선 순위) ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
@@ -35,21 +47,14 @@ app.add_middleware(
     allow_headers=["*"],  
 )
 
-async def get_api_key(header_value: str = Security(api_key_header)):
-    if header_value != API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid API Key")
-    return header_value
-
 def download_model_from_s3():
-    """S3에서 ONNX 모델 및 설정 파일 다운로드"""
     s3 = boto3.client('s3')
     if not os.path.exists(MODEL_DIR):
         os.makedirs(MODEL_DIR, exist_ok=True) 
     
-    # [수정] 다운로드할 파일 목록에 model.onnx 추가
     files = [
         'temp_model/config.json', 
-        'temp_model/model.onnx', # .safetensors 대신 .onnx
+        'temp_model/model.onnx',
         'temp_model/model.onnx.data',
         'temp_model/tokenizer.json', 
         'temp_model/tokenizer_config.json', 
@@ -58,7 +63,6 @@ def download_model_from_s3():
     
     for s3_key in files:
         raw_file_name = s3_key.split('/')[-1]
-        # 파일명 규칙 유지 (model_ 접두어 제거 등 사용자님 기존 로직 반영)
         file_name = raw_file_name.replace('model_', '')
         target = os.path.join(MODEL_DIR, file_name)
         
@@ -69,31 +73,22 @@ def download_model_from_s3():
                 print(f"파일 다운로드 실패: {s3_key}, 에러: {e}")
                 raise e
 
-# 전역 변수 설정
 tokenizer = None
 ort_session = None
 
 def get_model():
-    """ONNX 세션 및 토크나이저 로드"""
     global tokenizer, ort_session
     if tokenizer is None or ort_session is None:
         download_model_from_s3()
-        
-        # 1. 토크나이저 로드
         tokenizer = ElectraTokenizer.from_pretrained(MODEL_DIR, local_files_only=True)
-        
-        # 2. ONNX 런타임 세션 로드 (torch 없이 실행)
         onnx_path = os.path.join(MODEL_DIR, "model.onnx")
         sess_options = ort.SessionOptions()
         sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-        
-        # CPU 환경 최적화 설정
         ort_session = ort.InferenceSession(
             onnx_path, 
             sess_options, 
             providers=['CPUExecutionProvider']
         )
-        
     return tokenizer, ort_session
 
 class PredictIn(BaseModel):
@@ -102,9 +97,9 @@ class PredictIn(BaseModel):
 @app.get("/health")
 def health(): return {"ok": True}
 
+# --- 핵심 수정: Depends(get_api_key) 적용 ---
 @app.post("/predict")
-async def predict(inp: PredictIn, request: Request):
-    
+async def predict(inp: PredictIn, key: str = Depends(get_api_key)):
     global COLD_START
     tk, session = get_model() 
     
@@ -116,26 +111,22 @@ async def predict(inp: PredictIn, request: Request):
     COLD_START = False
 
     try:
-        # [수정] ONNX용 입력 데이터 생성 (numpy 기반)
         inputs = tk(text, return_tensors="np", truncation=True, max_length=256)
         ort_inputs = {
             'input_ids': inputs['input_ids'].astype(np.int64),
             'attention_mask': inputs['attention_mask'].astype(np.int64)
         }
 
-        # ONNX 추론 실행
         ort_outs = session.run(None, ort_inputs)
         logits = ort_outs[0]
 
-        # [수정] Softmax 계산 (numpy 기반)
         exp_logits = np.exp(logits - np.max(logits))
         probs = exp_logits / exp_logits.sum(axis=1, keepdims=True)
-        probs = probs[0] # 첫 번째 결과값 추출
+        probs = probs[0]
 
         neg_prob, pos_prob = float(probs[0]), float(probs[1])
         diff = abs(pos_prob - neg_prob) 
 
-        # 사용자님의 기존 NEUTRAL 판정 로직 유지
         if diff < 0.15:
             label, score = "NEUTRAL", max(pos_prob, neg_prob)
         else:
@@ -144,7 +135,6 @@ async def predict(inp: PredictIn, request: Request):
 
         latency_ms = int((time.time() - t0) * 1000)
         
-        # DynamoDB 로그 저장 로직 유지 [cite: 12, 24]
         try:
             log_item = {
                 'requestId': str(uuid.uuid4()),
@@ -153,7 +143,7 @@ async def predict(inp: PredictIn, request: Request):
                 'confidence': Decimal(str(round(score, 4))),
                 'latency_ms': latency_ms
             }
-            table.put_item(Item=log_item) [cite: 24, 30]
+            table.put_item(Item=log_item)
         except Exception as db_err:
             print(f"DB 저장 실패(무시): {db_err}")
 
