@@ -95,11 +95,16 @@ def health(): return {"ok": True}
 
 @app.post("/predict")
 async def predict(inp: PredictIn, request: Request):
-    if request.method == "POST":
-        client_api_key = request.headers.get("x-api-key")
-        if client_api_key != API_KEY:
-            print(f"인증 실패: 받은 키({client_api_key}) != 설정된 키({API_KEY})")
-            raise HTTPException(status_code=403, detail="Invalid or missing API Key")
+    # [핵심] 브라우저의 사전 확인(OPTIONS) 요청은 인증을 건너뜁니다.
+    if request.method == "OPTIONS":
+        return
+
+    # 실제 데이터가 오가는 POST 요청일 때만 키를 검사합니다.
+    client_api_key = request.headers.get("x-api-key")
+    
+    if client_api_key != API_KEY:
+        print(f"인증 실패: 받은 키({client_api_key}) != 설정된 키({API_KEY})")
+        raise HTTPException(status_code=403, detail="Invalid or missing API Key")
 
     global COLD_START
     tk, session = get_model() 
