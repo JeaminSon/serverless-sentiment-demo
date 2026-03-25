@@ -94,11 +94,11 @@ class PredictIn(BaseModel):
 def health(): return {"ok": True}
 
 @app.post("/predict")
-def predict(inp: PredictIn, request: Request):
-    client_api_key = request.headers.get("x-api-key")
-    
-    if client_api_key != API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid or missing API Key")
+async def predict(inp: PredictIn, request: Request):
+    if request.method == "POST":
+        client_api_key = request.headers.get("x-api-key")
+        if client_api_key != API_KEY:
+            raise HTTPException(status_code=403, detail="Invalid or missing API Key")
 
     global COLD_START
     tk, session = get_model() 
