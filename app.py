@@ -158,4 +158,4 @@ async def predict(inp: PredictIn, key: str = Depends(get_api_key)):
         print(f"추론 중 에러 발생: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-handler = Mangum(app)
+handler = Mangum(app, lifespan="off")
