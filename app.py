@@ -4,7 +4,7 @@ os.environ['HF_HOME'] = '/tmp'
 
 import time, boto3, uuid
 import numpy as np
-from decimal import Decimal
+from decimal import Decimal 
 from fastapi import FastAPI, HTTPException, Request, Depends, Security
 from pydantic import BaseModel
 from transformers import ElectraTokenizer
