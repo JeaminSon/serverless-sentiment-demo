@@ -95,10 +95,11 @@ def health(): return {"ok": True}
 
 @app.post("/predict")
 async def predict(inp: PredictIn, request: Request):
-    if request.method == "POST":
-        client_api_key = request.headers.get("x-api-key")
-        if client_api_key != API_KEY:
-            raise HTTPException(status_code=403, detail="Invalid or missing API Key")
+    client_api_key = request.headers.get("x-api-key")
+    
+    if client_api_key != API_KEY:
+        print(f"인증 실패: 받은 키({client_api_key}) != 설정된 키({API_KEY})")
+        raise HTTPException(status_code=403, detail="Invalid or missing API Key")
 
     global COLD_START
     tk, session = get_model() 
