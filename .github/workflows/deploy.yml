@@ -64,6 +64,10 @@ jobs:
           --function-name sentiment-api \
           --image-uri ${{ steps.login-ecr.outputs.registry }}/sentiment-lambda:latest
 
+        aws lambda update-function-configuration \
+          --function-name sentiment-api \
+          --environment "Variables={MODEL_BUCKET_NAME=sentiment-model-storage-jambread,MY_API_KEY=${{ secrets.MY_API_KEY }}}"
+
     - name: Send Discord Notification
       if: always() 
       uses: sarisia/actions-status-discord@v1
