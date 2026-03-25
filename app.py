@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from transformers import ElectraTokenizer
 import onnxruntime as ort
 from mangum import Mangum
+from fastapi.middleware.cors import CORSMiddleware
 
 # --- DynamoDB 설정 ---
 dynamodb = boto3.resource('dynamodb', region_name='ap-northeast-2')
@@ -23,6 +24,13 @@ API_KEY = os.environ.get("MY_API_KEY")
 
 app = FastAPI(title="Korean Sentiment API (ONNX)")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],  
+)
 def download_model_from_s3():
     """S3에서 ONNX 모델 및 설정 파일 다운로드"""
     s3 = boto3.client('s3')
